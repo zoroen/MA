@@ -5,7 +5,7 @@ Uses SeleniumBase with UC (Undetected Chrome) mode to bypass bot detection.
 
 Flow:
   1. Open the login page
-  2. Enter admission number (1979) and password (Sanjeev)
+  2. Enter admission number (6767) and password (ilikefeet)
   3. Submit login via the page's own myFunction() JS call
   4. Wait for redirect to the dashboard (Header.aspx)
   5. Switch into the main content iframe (myIframe)
@@ -47,8 +47,8 @@ def main():
 
         # ─── 3. Enter credentials ───
         print("[3/10] Entering credentials...")
-        driver.execute_script("document.getElementById('l1').value = '1979';")
-        driver.execute_script("document.getElementById('l2').value = 'Sanjeev';")
+        driver.execute_script("document.getElementById('l1').value = '<enter your admn no>';")
+        driver.execute_script("document.getElementById('l2').value = '<enter your password>';")
 
         # ─── 4. Submit login ───
         print("[4/10] Logging in...")
