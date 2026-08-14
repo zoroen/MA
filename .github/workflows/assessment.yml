@@ -1,0 +1,90 @@
+name: Morning Assessment
+
+# ──────────────────────────────────────────────────────────────────
+# Schedule (IST → UTC conversion: IST = UTC + 5:30)
+#   login.py     → 5:30 IST  = 00:00 UTC
+#   Submitter.py → 6:15 IST  = 00:45 UTC
+# Runs Monday–Friday only (school days)
+# ──────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    - cron: '0 0 * * 1-5'     # 5:30 IST → login.py
+    - cron: '45 0 * * 1-5'    # 6:15 IST → Submitter.py
+  workflow_dispatch:
+    inputs:
+      script:
+        description: 'Which script to run'
+        required: true
+        default: 'Submitter.py'
+        type: choice
+        options:
+          - login.py
+          - Submitter.py
+
+env:
+  PYTHONUNBUFFERED: '1'       # Force real-time log output
+
+jobs:
+  # ═══════════════════════════════════════════════════════
+  # Job 1: login.py — opens assessment (5:30 IST)
+  # ═══════════════════════════════════════════════════════
+  run-login:
+    if: >-
+      github.event.schedule == '0 0 * * 1-5' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.script == 'login.py')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'            # Caches pip packages across runs
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Chrome + xvfb
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb
+          # SeleniumBase auto-downloads its own uc_driver,
+          # but we need Chrome itself installed on the runner.
+          seleniumbase install chromedriver latest
+
+      - name: Run login.py
+        run: xvfb-run --auto-servernum python login.py
+
+  # ═══════════════════════════════════════════════════════
+  # Job 2: Submitter.py — answers + submits (6:15 IST)
+  # ═══════════════════════════════════════════════════════
+  run-submitter:
+    if: >-
+      github.event.schedule == '45 0 * * 1-5' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.script == 'Submitter.py')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Chrome + xvfb
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb
+          seleniumbase install chromedriver latest
+
+      - name: Run Submitter.py
+        run: xvfb-run --auto-servernum python Submitter.py
