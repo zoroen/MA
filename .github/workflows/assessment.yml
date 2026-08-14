@@ -8,8 +8,8 @@ name: Morning Assessment
 # ──────────────────────────────────────────────────────────────────
 on:
   schedule:
-    - cron: '0 0 * * 1-5'     # 5:30 IST → login.py
-    - cron: '45 0 * * 1-5'    # 6:15 IST → Submitter.py
+    - cron: '0 0 * * 1-6'     # 5:30 IST → login.py
+    - cron: '45 0 * * 1-6'    # 6:15 IST → Submitter.py
   workflow_dispatch:
     inputs:
       script:
@@ -30,7 +30,7 @@ jobs:
   # ═══════════════════════════════════════════════════════
   run-login:
     if: >-
-      github.event.schedule == '0 0 * * 1-5' ||
+      github.event.schedule == '0 0 * * 1-6' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.script == 'login.py')
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -63,7 +63,7 @@ jobs:
   # ═══════════════════════════════════════════════════════
   run-submitter:
     if: >-
-      github.event.schedule == '45 0 * * 1-5' ||
+      github.event.schedule == '45 0 * * 1-6' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.script == 'Submitter.py')
     runs-on: ubuntu-latest
     timeout-minutes: 5
