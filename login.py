@@ -1,11 +1,11 @@
 """
-login.py — Automates the SSM School Parent Portal
+
 ===================================================
 Uses SeleniumBase with UC (Undetected Chrome) mode to bypass bot detection.
 
 Flow:
   1. Open the login page
-  2. Enter admission number (1979) and password (Sanjeev)
+  2. Enter admission number (6767) and password (BDSM)
   3. Submit login via the page's own myFunction() JS call
   4. Wait for redirect to the dashboard (Header.aspx)
   5. Switch into the main content iframe (myIframe)
@@ -50,8 +50,8 @@ def main():
         # numeric input and limits length to 5 chars. Setting .value
         # directly via JS bypasses these client-side restrictions.
         print("[3/7] Entering credentials...")
-        driver.execute_script("document.getElementById('l1').value = '1979';")
-        driver.execute_script("document.getElementById('l2').value = 'Sanjeev';")
+        driver.execute_script("document.getElementById('l1').value = '<Enter your admn no>';")
+        driver.execute_script("document.getElementById('l2').value = '<Enter your password>';")
 
         # ─── 4. Submit login ───
         # The login button calls myFunction() which makes an AJAX POST
