@@ -18,6 +18,29 @@ from seleniumbase import Driver
 import time
 import sys
 import os
+import datetime
+from zoneinfo import ZoneInfo
+
+
+def wait_until_ist(target_hour, target_minute):
+    """In CI mode, sleep until the exact target IST time.
+    GitHub Actions cron can be delayed 30-90 min, so the workflow
+    is scheduled early and this function holds until the real time."""
+    if not os.environ.get('CI'):
+        return  # Skip when running locally
+
+    ist = ZoneInfo('Asia/Kolkata')
+    now = datetime.datetime.now(ist)
+    target = now.replace(hour=target_hour, minute=target_minute, second=0, microsecond=0)
+
+    if now >= target:
+        print(f"[TIME] Already past {target_hour}:{target_minute:02d} IST, proceeding now.")
+        return
+
+    wait_secs = (target - now).total_seconds()
+    print(f"[TIME] Waiting until {target_hour}:{target_minute:02d} IST ({wait_secs:.0f}s / {wait_secs/60:.1f}min)...")
+    time.sleep(wait_secs)
+    print(f"[TIME] It's {target_hour}:{target_minute:02d} IST -- starting!")
 
 
 def wait_for_url_change(driver, old_url, timeout=15):
@@ -30,6 +53,11 @@ def wait_for_url_change(driver, old_url, timeout=15):
 
 
 def main():
+    # ─── Wait until exact target time (CI only) ───
+    h = int(os.environ.get('LOGIN_TARGET_HOUR', '5'))
+    m = int(os.environ.get('LOGIN_TARGET_MINUTE', '30'))
+    wait_until_ist(h, m)
+
     # ─── 1. Launch a stealth Chrome browser (UC mode) ───
     # UC mode patches ChromeDriver internals so anti-bot systems
     # (Cloudflare, DataDome, etc.) cannot fingerprint it as automated.

@@ -1,15 +1,23 @@
 name: Morning Assessment
 
 # ──────────────────────────────────────────────────────────────────
-# Schedule (IST → UTC conversion: IST = UTC + 5:30)
-#   login.py     → 5:30 IST  = 00:00 UTC
-#   Submitter.py → 6:15 IST  = 00:45 UTC
-# Runs Monday–Friday only (school days)
+# GitHub Actions cron can be delayed 30-90 minutes during peak hours.
+# STRATEGY: Schedule ~30 min early + scripts wait until exact IST time.
+#
+# Targets (IST):
+#   login.py     → 5:30 AM IST
+#   Submitter.py → 6:15 AM IST
+#
+# Crons (30 min early, UTC):
+#   login.py     → 5:00 AM IST = 23:30 UTC (prev day) → Sun-Fri
+#   Submitter.py → 5:45 AM IST = 00:15 UTC           → Mon-Sat
+#
+# Runs Monday–Saturday (IST)
 # ──────────────────────────────────────────────────────────────────
 on:
   schedule:
-    - cron: '0 0 * * 1-6'     # 5:30 IST → login.py
-    - cron: '45 0 * * 1-6'    # 6:15 IST → Submitter.py
+    - cron: '30 23 * * 0-5'   # 5:00 AM IST (Mon-Sat) → login.py waits until 5:30
+    - cron: '15 0 * * 1-6'    # 5:45 AM IST (Mon-Sat) → Submitter.py waits until 6:15
   workflow_dispatch:
     inputs:
       script:
@@ -22,7 +30,12 @@ on:
           - Submitter.py
 
 env:
-  PYTHONUNBUFFERED: '1'       # Force real-time log output
+  PYTHONUNBUFFERED: '1'
+  # Scripts read these to know when to start
+  LOGIN_TARGET_HOUR: '5'
+  LOGIN_TARGET_MINUTE: '30'
+  SUBMITTER_TARGET_HOUR: '6'
+  SUBMITTER_TARGET_MINUTE: '15'
 
 jobs:
   # ═══════════════════════════════════════════════════════
@@ -30,10 +43,10 @@ jobs:
   # ═══════════════════════════════════════════════════════
   run-login:
     if: >-
-      github.event.schedule == '0 0 * * 1-6' ||
+      github.event.schedule == '30 23 * * 0-5' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.script == 'login.py')
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 40
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,7 +55,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'            # Caches pip packages across runs
+          cache: 'pip'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -51,8 +64,6 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq xvfb
-          # SeleniumBase auto-downloads its own uc_driver,
-          # but we need Chrome itself installed on the runner.
           seleniumbase install chromedriver latest
 
       - name: Run login.py
@@ -63,10 +74,10 @@ jobs:
   # ═══════════════════════════════════════════════════════
   run-submitter:
     if: >-
-      github.event.schedule == '45 0 * * 1-6' ||
+      github.event.schedule == '15 0 * * 1-6' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.script == 'Submitter.py')
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 40
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
