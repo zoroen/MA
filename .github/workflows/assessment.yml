@@ -1,52 +1,42 @@
 name: Morning Assessment
 
-# ──────────────────────────────────────────────────────────────────
-# GitHub Actions cron can be delayed 30-90 minutes during peak hours.
-# STRATEGY: Schedule ~30 min early + scripts wait until exact IST time.
+# ──────────────────────────────────────────────────────────────────────────
+# BULLETPROOF DELAY-PROOF STRATEGY
 #
-# Targets (IST):
-#   login.py     → 5:30 AM IST
-#   Submitter.py → 6:15 AM IST
-#
-# Crons (30 min early, UTC):
-#   login.py     → 5:00 AM IST = 23:30 UTC (prev day) → Sun-Fri
-#   Submitter.py → 5:45 AM IST = 00:15 UTC           → Mon-Sat
-#
-# Runs Monday–Saturday (IST)
-# ──────────────────────────────────────────────────────────────────
+# GitHub Actions cron can be delayed by up to 60-90 minutes during peak hours.
+# To guarantee 100% punctual execution:
+#   1. Single job starts 90 minutes early (4:00 AM IST / 22:30 UTC).
+#   2. Even with a 90-minute GitHub delay, the job starts by 5:30 AM IST at latest.
+#   3. Job holds until 5:30 AM IST -> executes login.py (starts exam, logs In-Time).
+#   4. Job holds until 6:15 AM IST -> executes Submitter.py (answers & submits).
+# ──────────────────────────────────────────────────────────────────────────
 on:
   schedule:
-    - cron: '30 23 * * 0-5'   # 5:00 AM IST (Mon-Sat) → login.py waits until 5:30
-    - cron: '15 0 * * 1-6'    # 5:45 AM IST (Mon-Sat) → Submitter.py waits until 6:15
+    # 4:00 AM IST (Sun-Fri 22:30 UTC) = Mon-Sat in IST
+    - cron: '30 22 * * 0-5'
   workflow_dispatch:
     inputs:
       script:
-        description: 'Which script to run'
+        description: 'Which script to run manually'
         required: true
-        default: 'Submitter.py'
+        default: 'all'
         type: choice
         options:
+          - all
           - login.py
           - Submitter.py
 
 env:
   PYTHONUNBUFFERED: '1'
-  # Scripts read these to know when to start
   LOGIN_TARGET_HOUR: '5'
   LOGIN_TARGET_MINUTE: '30'
   SUBMITTER_TARGET_HOUR: '6'
   SUBMITTER_TARGET_MINUTE: '15'
 
 jobs:
-  # ═══════════════════════════════════════════════════════
-  # Job 1: login.py — opens assessment (5:30 IST)
-  # ═══════════════════════════════════════════════════════
-  run-login:
-    if: >-
-      github.event.schedule == '30 23 * * 0-5' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.script == 'login.py')
+  run-assessment:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 180  # 3 hour window to accommodate early start + waiting
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -66,36 +56,10 @@ jobs:
           sudo apt-get install -y -qq xvfb
           seleniumbase install chromedriver latest
 
-      - name: Run login.py
+      - name: Step 1 - Start Exam at 5:30 AM IST (login.py)
+        if: github.event_name == 'schedule' || github.event.inputs.script == 'all' || github.event.inputs.script == 'login.py'
         run: xvfb-run --auto-servernum python login.py
 
-  # ═══════════════════════════════════════════════════════
-  # Job 2: Submitter.py — answers + submits (6:15 IST)
-  # ═══════════════════════════════════════════════════════
-  run-submitter:
-    if: >-
-      github.event.schedule == '15 0 * * 1-6' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.script == 'Submitter.py')
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Install Chrome + xvfb
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq xvfb
-          seleniumbase install chromedriver latest
-
-      - name: Run Submitter.py
+      - name: Step 2 - Submit Exam at 6:15 AM IST (Submitter.py)
+        if: github.event_name == 'schedule' || github.event.inputs.script == 'all' || github.event.inputs.script == 'Submitter.py'
         run: xvfb-run --auto-servernum python Submitter.py
