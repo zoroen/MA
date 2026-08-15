@@ -15,16 +15,6 @@ on:
     # 4:00 AM IST (Sun-Fri 22:30 UTC) = Mon-Sat in IST
     - cron: '30 22 * * 0-5'
   workflow_dispatch:
-    inputs:
-      script:
-        description: 'Which script to run manually'
-        required: true
-        default: 'all'
-        type: choice
-        options:
-          - all
-          - login.py
-          - Submitter.py
 
 env:
   PYTHONUNBUFFERED: '1'
@@ -57,9 +47,7 @@ jobs:
           seleniumbase install chromedriver latest
 
       - name: Step 1 - Start Exam at 5:30 AM IST (login.py)
-        if: github.event_name == 'schedule' || github.event.inputs.script == 'all' || github.event.inputs.script == 'login.py'
         run: xvfb-run --auto-servernum python login.py
 
       - name: Step 2 - Submit Exam at 6:15 AM IST (Submitter.py)
-        if: github.event_name == 'schedule' || github.event.inputs.script == 'all' || github.event.inputs.script == 'Submitter.py'
         run: xvfb-run --auto-servernum python Submitter.py
