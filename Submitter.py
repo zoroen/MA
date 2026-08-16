@@ -75,8 +75,8 @@ def main():
 
         # ─── 3. Enter credentials ───
         print("[3/10] Entering credentials...")
-        driver.execute_script("document.getElementById('l1').value = '<enter your admn no>';")
-        driver.execute_script("document.getElementById('l2').value = '<enter your password>';")
+        driver.execute_script("document.getElementById('l1').value = '1837';")
+        driver.execute_script("document.getElementById('l2').value = '1409';")
 
         # ─── 4. Submit login ───
         print("[4/10] Logging in...")
