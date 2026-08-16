@@ -78,8 +78,8 @@ def main():
         # numeric input and limits length to 5 chars. Setting .value
         # directly via JS bypasses these client-side restrictions.
         print("[3/7] Entering credentials...")
-        driver.execute_script("document.getElementById('l1').value = '<Enter your admn no>';")
-        driver.execute_script("document.getElementById('l2').value = '<Enter your password>';")
+        driver.execute_script("document.getElementById('l1').value = '1837';")
+        driver.execute_script("document.getElementById('l2').value = '1409';")
 
         # ─── 4. Submit login ───
         # The login button calls myFunction() which makes an AJAX POST
